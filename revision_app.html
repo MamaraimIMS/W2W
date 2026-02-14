@@ -1134,11 +1134,12 @@
     }, 2000);
   }
   // 1. Подключаемся к Telegram
-const tg = window.Telegram.WebApp;
+    const tg = window.Telegram.WebApp;
     tg.ready();
     tg.expand();
 
     // 1. ИСПОЛЬЗУЕМ PRODUCTION URL (без -test)
+    // Это позволит боту работать всегда, а не только во время теста
     const N8N_URL = 'https://alphagroupuz.app.n8n.cloud/webhook/W2W-mini-apps';
 
     const mainButton = tg.MainButton;
@@ -1146,7 +1147,7 @@ const tg = window.Telegram.WebApp;
     mainButton.show();
 
     // Функция для отправки запроса
-    async function sendDataToN8N(actionName) {
+    async function sendToAgent(actionName) {
         mainButton.showProgress(); 
         try {
             const response = await fetch(N8N_URL, {
@@ -1155,25 +1156,25 @@ const tg = window.Telegram.WebApp;
                 body: JSON.stringify({
                     user_name: tg.initDataUnsafe.user?.first_name || "User",
                     user_id: tg.initDataUnsafe.user?.id,
-                    action: actionName,
-                    message: "Запрос из Mini App"
+                    action: actionName
                 })
             });
 
             if (response.ok) {
                 const result = await response.json();
-                tg.showAlert(result.answer); // Показываем ответ от ИИ
+                // Показываем ответ от ИИ (поле answer из n8n)
+                tg.showAlert(result.answer || "Агент обработал запрос!");
             } else {
-                tg.showAlert("Агент сейчас занят, попробуй позже (Ошибка 404/500)");
+                tg.showAlert("Агент недоступен (Ошибка " + response.status + ")");
             }
         } catch (error) {
-            tg.showAlert("Нет связи с Агентом. Проверь интернет.");
+            tg.showAlert("Ошибка сети: проверь интернет или настройки n8n");
         }
         mainButton.hideProgress();
     }
 
-    // Слушаем нажатие главной кнопки
-    mainButton.onClick(() => sendDataToN8N("click_main_button"));
+    // Привязываем действие к кнопке
+    mainButton.onClick(() => sendToAgent("main_button_click"));
 </script>
 
 </body>
