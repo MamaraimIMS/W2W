@@ -1135,51 +1135,45 @@
   }
   // 1. Подключаемся к Telegram
 const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
+    tg.ready();
+    tg.expand();
 
-// 2. Ссылка на твой n8n (которую ты взял из узла Webhook)
-const N8N_URL = 'https://alphagroupuz.app.n8n.cloud/webhook-test/W2W-mini-apps';
+    // 1. ИСПОЛЬЗУЕМ PRODUCTION URL (без -test)
+    const N8N_URL = 'https://alphagroupuz.app.n8n.cloud/webhook/W2W-mini-apps';
 
-// 3. Настройка главной кнопки
-const mainButton = tg.MainButton;
-mainButton.setText("ЗАПУСТИТЬ ИИ-АНАЛИЗ");
-mainButton.show();
+    const mainButton = tg.MainButton;
+    mainButton.setText("ЗАПУСТИТЬ ИИ-АНАЛИЗ");
+    mainButton.show();
 
-// 4. Что происходит при нажатии на кнопку:
-mainButton.onClick(async () => {
-    // Показываем пользователю, что мы работаем (кнопка закрутится)
-    mainButton.showProgress(); 
-    
-    try {
-        // Отправляем «письмо» в твой n8n
-        const response = await fetch(N8N_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                user_name: tg.initDataUnsafe.user?.first_name || "User",
-                user_id: tg.initDataUnsafe.user?.id,
-                action: "click_main_button",
-                message: "Пользователь нажал кнопку в приложении"
-            })
-        });
+    // Функция для отправки запроса
+    async function sendDataToN8N(actionName) {
+        mainButton.showProgress(); 
+        try {
+            const response = await fetch(N8N_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    user_name: tg.initDataUnsafe.user?.first_name || "User",
+                    user_id: tg.initDataUnsafe.user?.id,
+                    action: actionName,
+                    message: "Запрос из Mini App"
+                })
+            });
 
-        // Если всё прошло успешно
-        if (response.ok) {
-            // Читаем ответ от n8n
-            const result = await response.json();
-            // Показываем именно то, что написал ИИ (поле answer)
-            tg.showAlert(result.answer);
-        } else {
-            tg.showAlert("Ошибка: n8n не ответил.");
+            if (response.ok) {
+                const result = await response.json();
+                tg.showAlert(result.answer); // Показываем ответ от ИИ
+            } else {
+                tg.showAlert("Агент сейчас занят, попробуй позже (Ошибка 404/500)");
+            }
+        } catch (error) {
+            tg.showAlert("Нет связи с Агентом. Проверь интернет.");
         }
-    } catch (error) {
-        tg.showAlert("Проверь интернет или ссылку на n8n");
+        mainButton.hideProgress();
     }
 
-    // Останавливаем крутилку на кнопке
-    mainButton.hideProgress();
-});
+    // Слушаем нажатие главной кнопки
+    mainButton.onClick(() => sendDataToN8N("click_main_button"));
 </script>
 
 </body>
