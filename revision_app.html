@@ -1369,7 +1369,11 @@
         tg.expand();
 
         // 2. Ссылка на твой n8n (которую ты взял из узла Webhook)
+    <script>
         const N8N_URL = 'https://alphagroupuz.app.n8n.cloud/webhook/W2W-mini-apps';
+
+        const tg = window.Telegram.WebApp;
+        const mainButton = tg.MainButton;
 
         // 3. Настройка главной кнопки
         const mainButton = tg.MainButton;
